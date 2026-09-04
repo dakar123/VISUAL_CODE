@@ -695,12 +695,14 @@
               <div id="spkEmpty"><p class="empty">Selecciona operación y datos, luego “Ejecutar job Spark”. Cambia los filtros del panel para probar con otros recortes.</p></div>
               <div id="spkResults" hidden>
                 <div id="spkStages" class="dag"></div>
+                <div class="spk-sub"><h4>🧩 Inspector de particiones y shuffle</h4><p class="mr-desc">Así quedó repartido tu dataset entre particiones (<code>hash(clave) % N</code>): cada clave viaja siempre a la misma partición, por eso el reduce nunca duplica.</p><div id="spkParts" class="mini-table"></div></div>
                 <pre id="spkCode" class="mr-code"></pre>
                 <div class="mr-output-grid">
                   <div class="mr-chart-box"><h4>📊 Gráfico Spark</h4><div class="chart-box"><canvas id="spkChart"></canvas><div id="spkChartFallback" hidden></div></div></div>
                   <div class="mr-table-box"><h4>📋 Tabla Spark</h4><div id="spkTable" class="mini-table mr-result-table"></div></div>
                 </div>
                 <p id="spkNote" class="rep-note"></p>
+                <div class="spk-sub"><h4>⚔️ MapReduce vs Spark (misma máquina)</h4><div id="spkCompare"></div></div>
               </div>
             </div>
 
@@ -741,10 +743,12 @@
               <div id="flkError" class="mr-error" hidden></div>
               <pre id="flkCode" class="mr-code"></pre>
               <div id="flkStats" class="mr-stats"></div>
+              <div id="flkMover" class="mr-stats"></div>
               <div class="mr-output-grid">
                 <div class="mr-chart-box"><h4>📊 Totales en vivo</h4><div class="chart-box"><canvas id="flkChart"></canvas><div id="flkChartFallback" hidden></div></div></div>
                 <div class="mr-table-box"><h4>📋 Top en vivo</h4><div id="flkTable" class="mini-table mr-result-table"><p class="empty" style="padding:12px">Pulsa “Iniciar stream”.</p></div></div>
               </div>
+              <div class="spk-sub"><h4>📡 Últimos eventos del flujo</h4><div id="flkFeed" class="flk-feed"><p class="empty" style="padding:6px">Sin eventos todavía.</p></div></div>
               <p class="rep-note">Simulación fiel del modelo Flink: eventos uno a uno, estado por clave, ventana y checkpoints periódicos (exactly-once). El SQL mostrado es el que usarías en un clúster Flink real.</p>
             </div>
           </div>
@@ -784,17 +788,35 @@ GROUP BY producto;</pre>
             </div>
           </div>
 
+          <div class="sf-box sf-shuffle">
+            <h4><i></i>🔀 El Shuffle en Spark (explicado con este proyecto)</h4>
+            <p>El <b>shuffle</b> es el momento en que los datos <b>cambian de máquina/partición para juntarse por clave</b>: es la única parte “cara” del proceso porque implica red. En tu operación (ej.: ventas por producto), ocurre así:</p>
+            <div class="shuf-steps">
+              <div class="shuf-step"><b>1 · Map local</b><span>Cada partición emite <code>(producto, venta)</code> sin moverse de su máquina.</span></div>
+              <span class="shuf-arrow">→</span>
+              <div class="shuf-step"><b>2 · Combine local</b><span>Spark pre-suma por producto <b>dentro</b> de cada partición (menos datos a mover).</span></div>
+              <span class="shuf-arrow">→</span>
+              <div class="shuf-step"><b>3 · Particionado</b><span><code>hash(producto) % N</code> decide a qué partición viaja cada clave: la misma clave <b>siempre</b> va al mismo destino.</span></div>
+              <span class="shuf-arrow">→</span>
+              <div class="shuf-step"><b>4 · Intercambio</b><span>Los bloques viajan por red y cada tarea reduce suma su grupo. Solo aquí hay red.</span></div>
+            </div>
+            <p class="sf-where">📍 <b>Diferencia con Hadoop:</b> MapReduce escribe el mapa completo a <b>disco/HDFS</b> y el reduce lo re-lee (2 escrituras pesadas por job). Spark hace el shuffle con archivos temporales locales y, sobre todo, <b>mantiene el resto en memoria</b> y solo baraja lo necesario (wide transformations como <code>groupBy</code>; las narrow como <code>filter/map</code> ni siquiera hacen shuffle). Por eso el simulador Spark mide menos ms que MapReduce sobre los mismos datos. Míralo en vivo: ejecuta un job y abre el “Inspector de particiones”.</p>
+          </div>
+
           <div class="sf-box sf-compare">
             <h4><i></i>⚖️ Diferencias clave: Hadoop/MapReduce vs Spark vs Flink</h4>
             <div class="table-wrap"><table class="data-table">
               <thead><tr><th>Aspecto</th><th>🐘 Hadoop MapReduce</th><th>🔥 Spark</th><th>🌊 Flink</th></tr></thead>
               <tbody>
-                <tr><td><b>Modelo</b></td><td>Batch en 2 fases (Map → Reduce)</td><td>Batch + DAG en memoria</td><td>Streaming primero (batch como caso especial)</td></tr>
-                <tr><td><b>Velocidad</b></td><td>Lento: escribe a disco entre fases</td><td>Rápido: datos en RAM, reintentos por linaje</td><td>Muy rápido en eventos: estado + checkpoints</td></tr>
-                <tr><td><b>Latencia típica</b></td><td>Minutos–horas</td><td>Segundos–minutos (micro-batch o batch)</td><td>Milisegundos–segundos (evento a evento)</td></tr>
+                <tr><td><b>Modelo</b></td><td>Batch en 2 fases rígidas (Map → Reduce)</td><td>Batch con grafo DAG flexible (N etapas)</td><td>Streaming primero (el batch es un stream finito)</td></tr>
+                <tr><td><b>Dónde viven los datos</b></td><td>Disco/HDFS entre fases</td><td>Memoria RAM (RDD/DataFrame cacheados)</td><td>Estado en memoria + checkpoints a disco</td></tr>
+                <tr><td><b>Shuffle</b></td><td>Siempre a disco: escribe todo el mapa y el reduce lo re-lee</td><td>Sort/hash local + red solo en transformaciones “wide” (<code>groupBy</code>); el resto en RAM</td><td>Redistribución por clave entre operadores, evento a evento</td></tr>
+                <tr><td><b>Velocidad</b></td><td>Lento: disco entre fases</td><td>Rápido (10–100× en iterativo)</td><td>Tiempo real por evento</td></tr>
+                <tr><td><b>Latencia típica</b></td><td>Minutos–horas</td><td>Segundos–minutos</td><td>Milisegundos–segundos</td></tr>
+                <tr><td><b>Tolerancia a fallos</b></td><td>Re-ejecuta tareas (HDFS replica ×3)</td><td>Recomputa particiones por linaje del DAG</td><td>Checkpoints + exactly-once</td></tr>
+                <tr><td><b>Lenguajes</b></td><td>Java (verboso), Hadoop Streaming</td><td>Python/SQL/Scala/R (PySpark simple)</td><td>Java/Scala + Flink SQL</td></tr>
                 <tr><td><b>Ideal para</b></td><td>ETL masivo nocturno, conteos históricos</td><td>Analítica interactiva, ML, este dashboard a escala</td><td>Alertas, fraude, totales “en vivo” por producto</td></tr>
-                <tr><td><b>Tolerancia a fallos</b></td><td>Re-ejecuta tareas (HDFS replica ×3)</td><td>Recomputa particiones por linaje</td><td>Checkpoints + exactly-once</td></tr>
-                <tr><td><b>En este proyecto</b></td><td>Simulado en MapReduce + HDFS real (namenode:9870)</td><td>Equivalente veloz del mismo groupBy</td><td>Equivalente del modo “Tiempo real: ON”</td></tr>
+                <tr><td><b>En este proyecto</b></td><td>Pestaña MapReduce + HDFS real (<code>namenode:9870</code>)</td><td>Simulador Spark: mismo groupBy con DAG visible</td><td>Simulador Flink: tus filas como eventos en vivo</td></tr>
               </tbody>
             </table></div>
           </div>

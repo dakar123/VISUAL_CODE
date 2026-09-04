@@ -3,6 +3,8 @@
 # Windows y CachyOS: mismos comandos, requiere Docker Desktop (Win) o docker engine (CachyOS)
 # Acceso: http://localhost:3000  | Mongo Express: http://localhost:8081 | HDFS UI: http://localhost:9870
 
+name: datastore
+
 services:
   mongodb:
     image: mongo:7
@@ -77,10 +79,12 @@ services:
       - namenode_data:/hadoop/dfs/name
       - ./ventas.csv:/tmp/ventas.csv:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9870/ || exit 1"]
+      # curl no siempre existe en la imagen Hadoop: prueba curl, luego wget, luego puerto TCP
+      test: ["CMD-SHELL", "curl -sf http://localhost:9870/ -o /dev/null || wget -q -O /dev/null http://localhost:9870/ || bash -c 'cat < /dev/null > /dev/tcp/127.0.0.1/9870'"]
       interval: 15s
       timeout: 5s
       retries: 10
+      start_period: 60s
 
   datanode:
     image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8

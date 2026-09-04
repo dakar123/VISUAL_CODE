@@ -1365,6 +1365,24 @@ function spkCodeFor(opKey,op,topN){
   const agg=m.agg==="COUNT"?`F.count("*")`:(m.agg==="AVG"?`F.avg("${m.val}")`:(m.agg==="MAX"?`F.max("${m.val}")`:`F.sum("${m.val}")`));
   return `# PySpark — ${op.label}\nfrom pyspark.sql import functions as F\n\ndf = spark.read.csv("ventas.csv", header=True, inferSchema=True)\nresultado = (df.groupBy("${m.key}")\n  .agg(${agg}.alias("total"))\n  .orderBy("total", ascending=False))\nresultado.show(${topN>=50?"resultado.count()":topN})  # Top ${topN>=50?"completo":topN}`;
 }
+/* Inspector de particiones: muestra cómo el shuffle reparte claves (hash % N) */
+function spkPartitions(op,input,parts){
+  const P=Array.from({length:parts},()=>({n:0,keys:new Map()}));
+  for(const r of input){
+    let k; try{ k=String(op.map(r).k); }catch{ continue; }
+    let h=0; for(let i=0;i<k.length;i++){ h=((h*31)+k.charCodeAt(i))>>>0; }
+    const p=P[h%parts]; p.n++; p.keys.set(k,(p.keys.get(k)||0)+1);
+  }
+  return P.map((p,i)=>{ let top="—",topN=0; p.keys.forEach((v,k)=>{ if(v>topN){ topN=v; top=k; } }); return {part:i,n:p.n,keys:p.keys.size,top,topN}; });
+}
+function spkCompareHtml(opKey,ms){
+  const mr=(state.lastMR&&state.lastMR.opKey===opKey)?state.lastMR.ms:null;
+  if(mr==null) return '<p class="empty" style="padding:6px">Ejecuta la misma operación en la pestaña MapReduce y vuelve: aquí se compararán los tiempos.</p>';
+  const max=Math.max(mr,ms,1);
+  const bar=(label,v,color)=>`<div class="css-bar-row"><span class="css-bar-label">${label}</span><span class="css-bar-track"><span class="css-bar-fill" style="width:${(v/max*100).toFixed(1)}%;background:${color}"></span></span><b>${v} ms</b></div>`;
+  const faster=mr===ms?"empate":(ms<mr?"🔥 Spark":"🐘 MapReduce");
+  return `<div class="css-bars">`+bar("🐘 MapReduce",mr,"linear-gradient(90deg,#EC4899,#9D174D)")+bar("🔥 Spark",ms,"linear-gradient(90deg,#F97316,#C2410C)")+`</div><p class="empty" style="padding:4px">Más rápido aquí: <b>${faster}</b> (misma máquina, 1 hilo; en clúster la brecha a favor de Spark crece por la memoria).</p>`;
+}
 function runSpark(){
   hideMrError("spkError");
   if(!state.rows.length){ alert("Carga un CSV primero (o usa “Cargar demo”)."); return; }
@@ -1391,6 +1409,10 @@ function runSpark(){
       {t:"Stage 3 · Reduce + show()",d:`${num(reduced.length)} resultados · ${ms} ms`}
     ].map((s)=>`<div class="dag-stage"><b>${s.t}</b><span>${s.d}</span></div>`).join('<span class="dag-arrow">→</span>');
     set("spkCode",spkCodeFor(opKey,op,topN));
+    try{
+      const grid=spkPartitions(op,input,parts);
+      document.getElementById("spkParts").innerHTML=`<table><thead><tr><th>Partición</th><th>Filas</th><th>Claves</th><th>Clave top (n)</th></tr></thead><tbody>${grid.map(g=>`<tr><td>P${g.part}</td><td>${num(g.n)}</td><td>${num(g.keys)}</td><td>${escapeHtml(g.top)} (${num(g.topN)})</td></tr>`).join("")}</tbody></table><p class="empty" style="padding:4px">Reparto determinista: la misma clave siempre cae en la misma partición.</p>`;
+    }catch(e){ document.getElementById("spkParts").innerHTML='<p class="empty">No se pudo inspeccionar particiones.</p>'; }
   }catch(e){ showMrError("spkError","etapas",e); }
   try{
     document.getElementById("spkTable").innerHTML=`<table><thead><tr><th>#</th><th>${escapeHtml(op.keyName)}</th><th>${escapeHtml(op.valueName)}</th><th>n</th></tr></thead><tbody>${shown.map((x,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(x.label)}</td><td><b>${op.fmt(x.value)}</b></td><td>${num(x.count)}</td></tr>`).join("")}</tbody></table>`;
@@ -1402,6 +1424,7 @@ function runSpark(){
   const mrMs=(state.lastMR&&state.lastMR.opKey===opKey)?` MapReduce midió ${state.lastMR.ms} ms en la misma máquina para esta operación.`:"";
   const noteEl=document.getElementById("spkNote");
   if(noteEl) noteEl.innerHTML=`Job Spark simulado sobre <b>${num(input.length)}</b> filas en <b>${ms} ms</b> (1 hilo del navegador; en clúster cada etapa se paraleliza por partición y los datos viven en memoria, sin disco entre etapas).${mrMs}`;
+  try{ document.getElementById("spkCompare").innerHTML=spkCompareHtml(opKey,ms); }catch(e){}
   toast(`🔥 Spark: ${num(input.length)} filas → Top ${shown.length} (${ms} ms).`);
 }
 /* ================= SIMULADOR FLINK (streaming en vivo + test real) ================= */
@@ -1427,10 +1450,15 @@ function flkStart(){
   if(!input.length){ alert("El recorte actual está vacío. Ajusta filtros o usa “Todos los registros”."); return; }
   const events=input.slice();
   for(let i=events.length-1;i>0;i--){ const k=Math.floor(Math.random()*(i+1)); const tmp=events[i]; events[i]=events[k]; events[k]=tmp; }
-  state.flk={timer:null,events,idx:0,agg:new Map(),queue:[],processed:0,t0:performance.now(),checks:0,running:true,opKey,total:events.length};
+  // Referencia batch sobre el MISMO recorte: permite probar que el stream suma coherente
+  let batchTotal=0;
+  try{ for(const r of input){ batchTotal+=op.map(r).v; } }catch(e){ batchTotal=0; }
+  state.flk={timer:null,events,idx:0,agg:new Map(),queue:[],processed:0,t0:performance.now(),checks:0,running:true,opKey,total:events.length,feed:[],prev:new Map(),batchTotal};
   set("flkCode",flkCodeFor(opKey));
   const d=document.getElementById("flkLiveDot"); if(d) d.hidden=false;
   document.getElementById("flkTable").innerHTML='<p class="empty" style="padding:12px">Recibiendo eventos…</p>';
+  document.getElementById("flkFeed").innerHTML='<p class="empty" style="padding:6px">Recibiendo eventos…</p>';
+  document.getElementById("flkMover").innerHTML="";
   state.flk.timer=setInterval(flkTick,500);
   toast(`🌊 Stream iniciado: ${num(events.length)} eventos (${document.getElementById("flkSpeed")?.value||100} ev/s).`);
 }
@@ -1445,6 +1473,11 @@ function flkTick(){
   for(;n<batch && F.idx<F.events.length;n++,F.idx++){
     const r=F.events[F.idx];
     let p; try{ p=op.map(r); }catch{ continue; }
+    // Desglose verificable de la venta: cantidad × precio = monto aplicado
+    const det=(F.opKey==="tickets_mes"||F.opKey==="transacciones_ciudad")
+      ? "+1 transacción"
+      : `${r.product} ×${r.quantity} @ ${money(r.price)} = ${money(r.amount)}`;
+    F.feed.unshift({k:p.k,v:p.v,d:det}); if(F.feed.length>6) F.feed.pop();
     if(mode==="w200"){
       F.queue.push(p); if(F.queue.length>200) F.queue.shift();
     }else{
@@ -1469,11 +1502,25 @@ function flkRender(op,mode){
   const F=state.flk;
   const rows=[...F.agg.entries()].map(([label,a])=>({label,value:a.sum,count:a.count})).sort((a,b)=>b.value-a.value);
   const top=rows.slice(0,8);
+  const totalSum=rows.reduce((s,x)=>s+x.value,0);
   const secs=Math.max(0.5,(performance.now()-F.t0)/1000);
   const tps=Math.round(F.processed/secs);
+  // Checksum: el acumulado del stream debe igualar el batch del mismo recorte
+  const diff=totalSum-(F.batchTotal||0);
+  const chk=mode==="w200"
+    ? `<span class="stat">🪟 Ventana parcial: <b>${op.fmt(totalSum)}</b> (de ${op.fmt(F.batchTotal||0)} total)</span>`
+    : (Math.abs(diff)<0.01
+      ? `<span class="stat ok">✓ Stream = Batch: <b>${op.fmt(totalSum)}</b></span>`
+      : `<span class="stat warn">Δ Stream−Batch: <b>${op.fmt(diff)}</b> (converge al completar)</span>`);
+  // clave en movimiento: mayor aumento desde el render anterior
+  let mover=null,moverGain=0;
+  for(const x of rows){ const g=x.value-(F.prev.get(x.label)||0); if(g>moverGain){ moverGain=g; mover=x; } }
+  F.prev=new Map(rows.map(x=>[x.label,x.value]));
   try{
-    document.getElementById("flkStats").innerHTML=`<span class="stat">Eventos <b>${num(F.processed)}/${num(F.total)}</b></span><span class="stat">Ritmo <b>${num(tps)} ev/s</b></span><span class="stat">Claves <b>${num(F.agg.size)}</b></span><span class="stat">Checkpoints <b>${num(F.checks)}</b></span><span class="stat">Ventana <b>${mode==="w200"?"últimos 200":"acumulada"}</b></span>`;
-    document.getElementById("flkTable").innerHTML=`<table><thead><tr><th>#</th><th>${escapeHtml(op.keyName)}</th><th>${escapeHtml(op.valueName)}</th><th>n</th></tr></thead><tbody>${top.map((x,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(x.label)}</td><td><b>${op.fmt(x.value)}</b></td><td>${num(x.count)}</td></tr>`).join("")||'<tr><td colspan="4">Sin eventos aún…</td></tr>'}</tbody></table>`;
+    document.getElementById("flkStats").innerHTML=`<span class="stat">Eventos <b>${num(F.processed)}/${num(F.total)}</b></span><span class="stat">Ritmo <b>${num(tps)} ev/s</b></span><span class="stat">Claves <b>${num(F.agg.size)}</b></span><span class="stat">Checkpoints <b>${num(F.checks)}</b></span><span class="stat">Ventana <b>${mode==="w200"?"últimos 200":"acumulada"}</b></span>${chk}`;
+    document.getElementById("flkMover").innerHTML=mover?`<span class="stat">🚀 En movimiento: <b>${escapeHtml(mover.label)}</b> +${op.fmt(moverGain)} este tramo</span>`:"";
+    document.getElementById("flkTable").innerHTML=`<table><thead><tr><th>#</th><th>${escapeHtml(op.keyName)}</th><th>${escapeHtml(op.valueName)}</th><th>n</th><th>%</th></tr></thead><tbody>${top.map((x,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(x.label)}</td><td><b>${op.fmt(x.value)}</b></td><td>${num(x.count)}</td><td>${totalSum?((x.value/totalSum)*100).toFixed(1)+"%":"—"}</td></tr>`).join("")||'<tr><td colspan="5">Sin eventos aún…</td></tr>'}</tbody></table>`;
+    document.getElementById("flkFeed").innerHTML=F.feed.length?F.feed.map(e=>`<span class="feed-item feed-detail"><b>${escapeHtml(e.k)}</b><em>${escapeHtml(e.d||("+"))}</em></span>`).join(""):'<p class="empty" style="padding:6px">Sin eventos todavía.</p>';
   }catch(e){ showMrError("flkError","streaming",e); flkStop(true); return; }
   const visible=document.getElementById("sparkflink")?.classList.contains("active-section");
   if(!visible) return;

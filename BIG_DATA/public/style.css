@@ -383,6 +383,27 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:28px 0 10px;b
 .sf-flink{border-top:3px solid #06B6D4}.sf-flink h4 i{background:#06B6D4}
 .sf-compare{border-top:3px solid #2563EB;margin-bottom:12px}.sf-compare h4 i{background:#2563EB}
 .sf-where{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:8px;margin:0!important}
+.sf-shuffle{border-top:3px solid #F59E0B;margin-bottom:12px}.sf-shuffle h4 i{background:#F59E0B}
+.shuf-steps{display:flex;align-items:stretch;gap:6px;margin:10px 0;flex-wrap:wrap}
+.shuf-step{flex:1;min-width:140px;background:var(--surface-2);border:1px solid var(--border);border-left:4px solid #F59E0B;border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.shuf-step b{font-size:11px}
+.shuf-step span{font-size:11px;color:var(--muted);line-height:1.5}
+.shuf-step code{background:#fff;border:1px solid var(--border);border-radius:6px;padding:0 5px;font-size:10px}
+.shuf-arrow{align-self:center;font-weight:900;color:#F59E0B}
+.spk-sub{margin:10px 0}
+.spk-sub h4{margin:0 0 6px;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}
+.flk-feed{display:flex;flex-wrap:wrap;gap:6px}
+.feed-item{display:inline-flex;gap:6px;align-items:center;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;font-size:11px;animation:fadeIn .3s ease}
+.feed-item b{font-weight:800}
+.feed-item em{font-style:normal;color:#0E7490;font-weight:700}
+.feed-detail{flex-direction:column;align-items:flex-start;gap:1px;border-radius:12px}
+.feed-detail em{font-size:10px}
+.mr-stats .stat.ok{background:#ECFDF5;border-color:#6EE7B7}
+.mr-stats .stat.ok b{color:#059669}
+.mr-stats .stat.warn{background:#FFFBEB;border-color:#FCD34D}
+.mr-stats .stat.warn b{color:#B45309}
+#flkMover{margin-top:6px}
+#flkMover .stat{background:#ECFEFF;border-color:#67E8F9}
 .sf-diagram{border-top:3px solid #7C3AED}.sf-diagram h4 i{background:#7C3AED}
 .pipe{display:flex;align-items:stretch;gap:8px;margin:10px 0;flex-wrap:wrap}
 .pipe-stage{flex:1;min-width:140px;border-radius:12px;padding:12px;text-align:center;border:1px solid var(--border);display:flex;flex-direction:column;gap:6px;justify-content:center}

@@ -20,7 +20,7 @@
         <a class="landing-link" href="#funcionalidades">Funcionalidades</a>
         <a class="landing-link" href="#casos">Casos de éxito</a>
         <a class="landing-link" href="#contacto">Contacto</a>
-        <button class="nav-login" data-open-login>Ingresar</button>
+        <button type="button" class="nav-login" data-open-login>Ingresar</button>
       </div>
     </nav>
     <section class="landing-hero" id="landingInicio">
@@ -28,7 +28,7 @@
         <p class="eyebrow">INTELIGENCIA COMERCIAL PARA DATASTORE</p>
         <h1>Tu portal al análisis de <span>Big Data empresarial.</span></h1>
         <p class="hero-lede">Transforma tus datos de ventas en inteligencia para decisiones estratégicas. Ahora con panel en tiempo real, MongoDB y HDFS.</p>
-        <button class="hero-action" data-open-login>Comenzar ahora <span>→</span></button>
+        <button type="button" class="hero-action" data-open-login>Comenzar ahora <span>→</span></button>
       </div>
       <div class="hero-visual" aria-label="Vista previa del dashboard">
         <div class="data-orbit orbit-one"></div><div class="data-orbit orbit-two"></div>
@@ -51,7 +51,7 @@
   <main id="loginView" class="login-view" hidden>
     <div class="login-backdrop"></div>
     <section class="login-panel" aria-labelledby="loginTitle">
-      <button class="close-login" data-close-login aria-label="Volver al inicio">×</button>
+      <button type="button" class="close-login" data-close-login aria-label="Volver al inicio">×</button>
       <div class="login-brand"><span class="brand-mark">◒</span><div><strong>DATASTORE S.A.C.</strong><small>ANÁLISIS DE VENTAS</small></div></div>
       <div class="login-divider"></div>
       <p class="eyebrow">PORTAL EMPRESARIAL</p>
@@ -86,15 +86,17 @@
   <div class="layout">
     <aside class="sidebar">
       <nav>
-        <button class="nav-item active" data-section="panel">⚡ <span>Panel Interactivo</span></button>
-        <button class="nav-item" data-section="inicio">⌂ <span>Inicio</span></button>
-        <button class="nav-item" data-section="resumen">▣ <span>Resumen</span></button>
-        <button class="nav-item" data-section="periodo">◷ <span>Ventas por período</span></button>
-        <button class="nav-item" data-section="categoria">▥ <span>Ventas por categoría</span></button>
-        <button class="nav-item" data-section="productos">▦ <span>Productos</span></button>
-        <button class="nav-item" data-section="sedes">⌖ <span>Sedes / Ciudades</span></button>
-        <button class="nav-item" data-section="analisis">◈ <span>Análisis</span></button>
-        <button class="nav-item" data-section="reportes">▤ <span>Reportes</span></button>
+        <button type="button" class="nav-item active" data-section="panel">⚡ <span>Panel Interactivo</span></button>
+        <button type="button" class="nav-item" data-section="inicio">⌂ <span>Inicio</span></button>
+        <button type="button" class="nav-item" data-section="resumen">▣ <span>Resumen</span></button>
+        <button type="button" class="nav-item" data-section="periodo">◷ <span>Ventas por período</span></button>
+        <button type="button" class="nav-item" data-section="categoria">▥ <span>Ventas por categoría</span></button>
+        <button type="button" class="nav-item" data-section="productos">▦ <span>Productos</span></button>
+        <button type="button" class="nav-item" data-section="sedes">⌖ <span>Sedes / Ciudades</span></button>
+        <button type="button" class="nav-item" data-section="analisis">◈ <span>Análisis</span></button>
+        <button type="button" class="nav-item" data-section="reportes">▤ <span>Reportes</span></button>
+        <button type="button" class="nav-item" data-section="mapreduce">🗺 <span>MapReduce</span></button>
+        <button type="button" class="nav-item" data-section="sparkflink">⚡ <span>Spark / Flink</span></button>
       </nav>
 
       <div class="sidebar-bottom">
@@ -104,6 +106,7 @@
         </label>
         <small id="fileStatus">Sin archivo cargado</small>
         <button id="demoLoadBtn" type="button" class="demo-load-btn">⚡ Cargar demo (sin archivo)</button>
+        <button id="clearDataBtn" type="button" class="clear-data-btn" title="Borra los datos cargados para subir otro archivo">🧹 Limpiar datos</button>
       </div>
     </aside>
 
@@ -132,7 +135,7 @@
           <label>Ciudad / Sede
             <select id="locationFilter"><option value="all">Todos</option></select>
           </label>
-          <button id="applyFilters" class="primary-btn">🔎 Aplicar</button>
+          <button id="applyFilters" type="button" class="primary-btn">🔎 Aplicar</button>
         </div>
       </section>
 
@@ -260,77 +263,199 @@
           </div>
         </div>
 
-        <!-- 5 CUADROS -->
-        <div class="panel-grid-5">
+          <div class="panel-status-row">
+            <span id="panelLoading" class="panel-loading" hidden>◌ Actualizando cuadros…</span>
+            <span class="panel-hint">Los filtros detallados solo recargan los cuadros (sin reiniciar la página).</span>
+            <button id="showAllCuadros" class="ghost-btn small-btn" type="button" hidden>👁 Ver todos los cuadros</button>
+          </div>
+
+        <!-- 9 CUADROS FIJOS (sin alargar la página: scroll interno + ver solo/expandir) -->
+        <div class="panel-grid-5 panel-grid-9" id="panelGrid">
 
           <!-- CUADRO 1: KPIs reactivos -->
-          <article class="panel-card cuadro cuadro-kpi">
+          <article class="panel-card cuadro cuadro-kpi" data-cuadro="Cuadro 1 — KPIs Reactivos">
             <div class="cuadro-head">
               <h4>📊 Cuadro 1 — KPIs Reactivos</h4>
-              <span class="cuadro-badge">tiempo real</span>
+              <div class="cuadro-tools">
+                <span class="cuadro-badge">tiempo real</span>
+                <button type="button" class="icon-btn" data-action="solo" title="Ver solo este cuadro">👁</button>
+                <button type="button" class="icon-btn" data-action="expand" title="Ampliar en ventana">⤢</button>
+                <button type="button" class="icon-btn" data-action="collapse" title="Contraer / expandir contenido">—</button>
+              </div>
             </div>
-            <div class="kpi-reactive">
-              <div><small>Total ventas</small><strong id="pTotalSales">S/ 0.00</strong><span id="pTotalSalesDelta" class="delta">—</span></div>
-              <div><small>Transacciones</small><strong id="pTransactions">0</strong><span id="pTransDelta" class="delta">—</span></div>
-              <div><small>Ticket promedio</small><strong id="pAvgSale">S/ 0.00</strong><span id="pAvgDelta" class="delta">—</span></div>
-              <div><small>Unidades</small><strong id="pQty">0</strong><span id="pQtyDelta" class="delta">—</span></div>
-              <div><small>Precio prom.</small><strong id="pAvgPrice">S/ 0.00</strong><span id="pPriceDelta" class="delta">—</span></div>
-              <div><small>Ciudades activas</small><strong id="pCities">0</strong><span>sedes</span></div>
+            <div class="cuadro-body">
+              <div class="kpi-reactive">
+                <div class="kpi-mini kpi-cyan"><small>Total ventas</small><strong id="pTotalSales">S/ 0.00</strong><span id="pTotalSalesDelta" class="delta">—</span></div>
+                <div class="kpi-mini kpi-blue"><small>Transacciones</small><strong id="pTransactions">0</strong><span id="pTransDelta" class="delta">—</span></div>
+                <div class="kpi-mini kpi-violet"><small>Ticket promedio</small><strong id="pAvgSale">S/ 0.00</strong><span id="pAvgDelta" class="delta">—</span></div>
+                <div class="kpi-mini kpi-green"><small>Unidades</small><strong id="pQty">0</strong><span id="pQtyDelta" class="delta">—</span></div>
+                <div class="kpi-mini kpi-amber"><small>Precio prom.</small><strong id="pAvgPrice">S/ 0.00</strong><span id="pPriceDelta" class="delta">—</span></div>
+                <div class="kpi-mini kpi-rose"><small>Ciudades activas</small><strong id="pCities">0</strong><span>sedes</span></div>
+              </div>
+              <div class="chart-box chart-box-sm"><canvas id="kpiSpark" height="60"></canvas></div>
+              <div class="insight-mini" id="kpiInsight">Carga datos para ver insights empresariales.</div>
             </div>
-            <canvas id="kpiSpark" height="60"></canvas>
-            <div class="insight-mini" id="kpiInsight">Carga datos para ver insights empresariales.</div>
           </article>
 
           <!-- CUADRO 2: Tendencia temporal -->
-          <article class="panel-card cuadro cuadro-tendencia">
+          <article class="panel-card cuadro cuadro-tendencia" data-cuadro="Cuadro 2 — Tendencia y Estacionalidad">
             <div class="cuadro-head">
-              <h4>📈 Cuadro 2 — Tendencia & Estacionalidad</h4>
-              <select id="trendMode">
-                <option value="month">Por mes</option>
-                <option value="category">Por categoría (mes)</option>
-              </select>
+              <h4>📈 Cuadro 2 — Tendencia &amp; Estacionalidad</h4>
+              <div class="cuadro-tools">
+                <select id="trendMode" aria-label="Modo tendencia">
+                  <option value="month">Por mes</option>
+                  <option value="category">Por categoría (mes)</option>
+                </select>
+                <button type="button" class="icon-btn" data-action="solo" title="Ver solo este cuadro">👁</button>
+                <button type="button" class="icon-btn" data-action="expand" title="Ampliar en ventana">⤢</button>
+                <button type="button" class="icon-btn" data-action="collapse" title="Contraer / expandir contenido">—</button>
+              </div>
             </div>
-            <canvas id="panelTrendChart"></canvas>
-            <div class="cuadro-foot">
-              <span id="trendBestMonth">Mejor mes: —</span>
-              <span id="trendProjection">Proyección próximo mes: —</span>
+            <div class="cuadro-body">
+              <div class="chart-box"><canvas id="panelTrendChart"></canvas></div>
+              <div class="cuadro-foot">
+                <span id="trendBestMonth">Mejor mes: —</span>
+                <span id="trendProjection">Proyección próximo mes: —</span>
+              </div>
             </div>
           </article>
 
           <!-- CUADRO 3: Ranking -->
-          <article class="panel-card cuadro cuadro-ranking">
+          <article class="panel-card cuadro cuadro-ranking" data-cuadro="Cuadro 3 — Ranking Competitivo">
             <div class="cuadro-head">
               <h4>🏆 Cuadro 3 — Ranking Competitivo</h4>
-              <span id="rankingSubtitle" class="cuadro-badge">Top 10 · Más ventas</span>
+              <div class="cuadro-tools">
+                <span id="rankingSubtitle" class="cuadro-badge">Top 10 · Más ventas</span>
+                <button type="button" class="icon-btn" data-action="solo" title="Ver solo este cuadro">👁</button>
+                <button type="button" class="icon-btn" data-action="expand" title="Ampliar en ventana">⤢</button>
+                <button type="button" class="icon-btn" data-action="collapse" title="Contraer / expandir contenido">—</button>
+              </div>
             </div>
-            <canvas id="panelRankingChart"></canvas>
-            <div id="rankingTable" class="mini-table"></div>
+            <div class="cuadro-body">
+              <div class="chart-box"><canvas id="panelRankingChart"></canvas></div>
+              <div id="rankingTable" class="mini-table"></div>
+            </div>
           </article>
 
           <!-- CUADRO 4: Geográfico -->
-          <article class="panel-card cuadro cuadro-geo">
+          <article class="panel-card cuadro cuadro-geo" data-cuadro="Cuadro 4 — Inteligencia Geográfica">
             <div class="cuadro-head">
               <h4>📍 Cuadro 4 — Inteligencia Geográfica</h4>
-              <select id="geoMode">
-                <option value="city">Por ciudad</option>
-                <option value="category">Por categoría</option>
-              </select>
+              <div class="cuadro-tools">
+                <select id="geoMode" aria-label="Modo geográfico">
+                  <option value="city">Por ciudad</option>
+                  <option value="category">Por categoría</option>
+                </select>
+                <button type="button" class="icon-btn" data-action="solo" title="Ver solo este cuadro">👁</button>
+                <button type="button" class="icon-btn" data-action="expand" title="Ampliar en ventana">⤢</button>
+                <button type="button" class="icon-btn" data-action="collapse" title="Contraer / expandir contenido">—</button>
+              </div>
             </div>
-            <canvas id="panelGeoChart"></canvas>
-            <div id="geoTable" class="mini-table"></div>
+            <div class="cuadro-body">
+              <div class="chart-box"><canvas id="panelGeoChart"></canvas></div>
+              <div id="geoTable" class="mini-table"></div>
+            </div>
           </article>
 
           <!-- CUADRO 5: Precio -->
-          <article class="panel-card cuadro cuadro-precio">
+          <article class="panel-card cuadro cuadro-precio" data-cuadro="Cuadro 5 — Análisis de Precio">
             <div class="cuadro-head">
               <h4>💲 Cuadro 5 — Análisis de Precio</h4>
-              <span class="cuadro-badge" id="priceBadge">—</span>
+              <div class="cuadro-tools">
+                <span class="cuadro-badge" id="priceBadge">—</span>
+                <button type="button" class="icon-btn" data-action="solo" title="Ver solo este cuadro">👁</button>
+                <button type="button" class="icon-btn" data-action="expand" title="Ampliar en ventana">⤢</button>
+                <button type="button" class="icon-btn" data-action="collapse" title="Contraer / expandir contenido">—</button>
+              </div>
             </div>
-            <canvas id="panelPriceChart"></canvas>
-            <canvas id="panelScatterChart" height="140"></canvas>
-            <div id="priceStats" class="price-stats"></div>
+            <div class="cuadro-body">
+              <div class="chart-box chart-box-sm"><canvas id="panelPriceChart"></canvas></div>
+              <div class="chart-box chart-box-sm"><canvas id="panelScatterChart" height="140"></canvas></div>
+              <div id="priceStats" class="price-stats"></div>
+            </div>
           </article>
 
+          <!-- CUADRO 6: Pareto -->
+          <article class="panel-card cuadro cuadro-pareto" data-cuadro="Cuadro 6 — Pareto y Concentración">
+            <div class="cuadro-head">
+              <h4>🎯 Cuadro 6 — Pareto &amp; Concentración</h4>
+              <div class="cuadro-tools">
+                <span class="cuadro-badge badge-violet" id="paretoBadge">80/20</span>
+                <button type="button" class="icon-btn" data-action="solo" title="Ver solo este cuadro">👁</button>
+                <button type="button" class="icon-btn" data-action="expand" title="Ampliar en ventana">⤢</button>
+                <button type="button" class="icon-btn" data-action="collapse" title="Contraer / expandir contenido">—</button>
+              </div>
+            </div>
+            <div class="cuadro-body">
+              <div class="chart-box chart-box-sm"><canvas id="panelParetoChart"></canvas></div>
+              <div id="paretoTable" class="mini-table"></div>
+              <div class="insight-mini" id="paretoInsight">El 20% de productos suele concentrar el 80% de ventas.</div>
+            </div>
+          </article>
+
+          <!-- CUADRO 7: Calendario comercial -->
+          <article class="panel-card cuadro cuadro-cal" data-cuadro="Cuadro 7 — Calendario Comercial">
+            <div class="cuadro-head">
+              <h4>🗓️ Cuadro 7 — Calendario Comercial</h4>
+              <div class="cuadro-tools">
+                <span class="cuadro-badge badge-green" id="calBadge">—</span>
+                <button type="button" class="icon-btn" data-action="solo" title="Ver solo este cuadro">👁</button>
+                <button type="button" class="icon-btn" data-action="expand" title="Ampliar en ventana">⤢</button>
+                <button type="button" class="icon-btn" data-action="collapse" title="Contraer / expandir contenido">—</button>
+              </div>
+            </div>
+            <div class="cuadro-body">
+              <div class="chart-box chart-box-sm"><canvas id="panelWeekdayChart"></canvas></div>
+              <div id="weekdayTable" class="mini-table"></div>
+              <div class="insight-mini" id="calInsight">Día y trimestre con mejor rendimiento.</div>
+            </div>
+          </article>
+
+          <!-- CUADRO 8: Ticket -->
+          <article class="panel-card cuadro cuadro-ticket" data-cuadro="Cuadro 8 — Ticket y Demanda">
+            <div class="cuadro-head">
+              <h4>🧾 Cuadro 8 — Ticket &amp; Demanda</h4>
+              <div class="cuadro-tools">
+                <span class="cuadro-badge badge-amber" id="ticketBadge">—</span>
+                <button type="button" class="icon-btn" data-action="solo" title="Ver solo este cuadro">👁</button>
+                <button type="button" class="icon-btn" data-action="expand" title="Ampliar en ventana">⤢</button>
+                <button type="button" class="icon-btn" data-action="collapse" title="Contraer / expandir contenido">—</button>
+              </div>
+            </div>
+            <div class="cuadro-body">
+              <div class="chart-box chart-box-sm"><canvas id="panelTicketChart"></canvas></div>
+              <div id="ticketStats" class="price-stats"></div>
+              <div class="insight-mini" id="ticketInsight">Distribución del valor por transacción.</div>
+            </div>
+          </article>
+
+          <!-- CUADRO 9: Semáforo -->
+          <article class="panel-card cuadro cuadro-riesgo" data-cuadro="Cuadro 9 — Semáforo y Decisiones">
+            <div class="cuadro-head">
+              <h4>🚦 Cuadro 9 — Semáforo &amp; Decisiones</h4>
+              <div class="cuadro-tools">
+                <span class="cuadro-badge badge-rose" id="riskBadge">—</span>
+                <button type="button" class="icon-btn" data-action="solo" title="Ver solo este cuadro">👁</button>
+                <button type="button" class="icon-btn" data-action="expand" title="Ampliar en ventana">⤢</button>
+                <button type="button" class="icon-btn" data-action="collapse" title="Contraer / expandir contenido">—</button>
+              </div>
+            </div>
+            <div class="cuadro-body">
+              <div class="chart-box chart-box-sm"><canvas id="panelRiskChart"></canvas></div>
+              <div id="riskList" class="risk-list"></div>
+            </div>
+          </article>
+
+        </div>
+
+        <div id="cuadroModal" class="cuadro-modal" hidden>
+          <div class="cuadro-modal-box" role="dialog" aria-modal="true">
+            <div class="cuadro-modal-head">
+              <h4 id="cuadroModalTitle">Cuadro</h4>
+              <button id="cuadroModalClose" type="button" class="ghost-btn small-btn">✕ Cerrar</button>
+            </div>
+            <div id="cuadroModalBody" class="cuadro-modal-body"></div>
+          </div>
         </div>
 
         <div class="panel-insights">
@@ -406,16 +531,316 @@
       </section>
 
       <section id="reportes" class="section">
-        <article class="card">
-          <h3>📄 Reporte de análisis</h3>
+        <article class="card report-card">
+          <div class="report-head">
+            <h3>📄 Reportes empresariales</h3>
+            <span class="cuadro-badge">Cuadros · Colores corporativos · Exportable</span>
+          </div>
           <div class="report-filters">
+            <label>Tipo de reporte
+              <select id="reportType">
+                <option value="ejecutivo">⭐ Ejecutivo (recomendado)</option>
+                <option value="completo">📊 Completo (actual ampliado)</option>
+                <option value="periodo">📅 Ventas por período</option>
+                <option value="categoria">🗂️ Por categoría</option>
+                <option value="geografico">📍 Geográfico / sedes</option>
+                <option value="productos">📦 Productos críticos</option>
+              </select>
+            </label>
             <label>Año<select id="reportYearFilter"><option value="all">Todos</option></select></label>
             <label>Mes<select id="reportMonthFilter"><option value="all">Todos</option><option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option><option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option><option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option><option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option></select></label>
             <label>Ciudad / Sede<select id="reportLocationFilter"><option value="all">Todos</option></select></label>
             <button id="generateReportBtn" class="primary-btn" type="button">📊 Generar reporte</button>
           </div>
-          <div class="report-actions"><button id="downloadReportCSV" class="primary-btn" type="button">📥 CSV</button><button id="downloadReportHTML" class="primary-btn" type="button">📄 HTML</button><button id="downloadReportPDF" class="primary-btn" type="button">📑 PDF</button></div>
-          <div id="reportContent"><p class="empty">Carga un CSV y genera un reporte con los filtros seleccionados.</p></div>
+          <div class="report-actions"><button id="downloadReportCSV" class="primary-btn" type="button">📥 CSV</button><button id="downloadReportHTML" class="primary-btn" type="button">📄 HTML</button><button id="downloadReportPDF" class="primary-btn" type="button">📑 PDF</button><button id="clearReportBtn" class="ghost-btn" type="button">🧹 Limpiar reporte</button></div>
+          <div id="reportContent"><p class="empty">Carga un CSV y genera un reporte con los filtros seleccionados. Elige el tipo: Ejecutivo, Completo, Período, Categoría, Geográfico o Productos.</p></div>
+        </article>
+      </section>
+
+      <section id="mapreduce" class="section">
+        <article class="card mr-card">
+          <div class="report-head">
+            <h3>🗺 MapReduce — Procesamiento distribuido</h3>
+            <span class="cuadro-badge">MAP → AGRUPACIÓN → REDUCE → RESULTADO</span>
+          </div>
+          <p class="mr-lede">Selecciona una operación y el conjunto de datos a procesar. El motor simula el pipeline MapReduce (como en Hadoop) sobre tus filas y muestra cada fase con sus resultados reales.</p>
+          <div class="mr-config">
+            <label>⚙️ Operación
+              <select id="mrOperation">
+                <option value="ventas_producto">💰 Total de ventas (S/) por producto</option>
+                <option value="unidades_categoria">📦 Total de unidades por categoría</option>
+                <option value="ventas_ciudad">📍 Total de ventas (S/) por ciudad / sede</option>
+                <option value="tickets_mes">🗓️ N° de transacciones por mes</option>
+                <option value="ticket_prom_categoria">🧾 Ticket promedio (S/) por categoría</option>
+                <option value="precio_prom_producto">🏷️ Precio unitario promedio (S/) por producto</option>
+                <option value="ventas_mes">📅 Total de ventas (S/) por mes</option>
+                <option value="unidades_producto">📦 Total de unidades por producto</option>
+                <option value="ventas_categoria">🗂️ Total de ventas (S/) por categoría</option>
+                <option value="transacciones_ciudad">🔢 N° de transacciones por ciudad / sede</option>
+                <option value="ticket_prom_ciudad">🧾 Ticket promedio (S/) por ciudad / sede</option>
+                <option value="venta_max_producto">🏆 Venta máxima (S/) por producto</option>
+              </select>
+            </label>
+            <label>🗂️ Datos de entrada
+              <select id="mrDataset">
+                <option value="filtrados">Filtros actuales del panel</option>
+                <option value="todos">Todos los registros cargados</option>
+              </select>
+            </label>
+            <label>🔝 Top N
+              <select id="mrTopN">
+                <option value="5">Top 5</option>
+                <option value="10" selected>Top 10</option>
+                <option value="15">Top 15</option>
+                <option value="50">Todos</option>
+              </select>
+            </label>
+            <label>🚫 Valor mínimo
+              <input id="mrMinVal" type="number" min="0" step="any" value="0" title="Filtra la salida: oculta las claves con valor agregado menor al umbral.">
+            </label>
+            <button id="mrRunBtn" type="button" class="primary-btn">▶ Ejecutar MapReduce</button>
+          </div>
+          <div class="report-actions">
+            <span id="mrDatasetInfo" class="badge-count">Sin datos — carga un CSV</span>
+            <button id="mrExportBtn" type="button" class="primary-btn">📥 Exportar resultado (CSV)</button>
+            <button id="mrClearBtn" type="button" class="ghost-btn">🧹 Limpiar</button>
+          </div>
+          <div id="mrEmpty"><p class="empty">Elige una operación y pulsa “Ejecutar MapReduce”. Tip: cambia los filtros del Panel Interactivo y usa “Filtros actuales del panel” para probar con distintos recortes de datos.</p></div>
+          <div id="mrError" class="mr-error" hidden></div>
+          <div id="mrResults" hidden>
+            <div class="mr-flow">
+              <div class="mr-phase mr-map">
+                <h4><span class="mr-step">1</span>MAP</h4>
+                <p class="mr-desc">Cada fila emite un par <code>(clave, valor)</code>.</p>
+                <pre id="mrMapCode" class="mr-code"></pre>
+                <div id="mrMapStats" class="mr-stats"></div>
+                <div id="mrMapSample" class="mini-table"></div>
+              </div>
+              <div class="mr-phase mr-shuffle">
+                <h4><span class="mr-step">2</span>AGRUPACIÓN</h4>
+                <p class="mr-desc">Shuffle: agrupa valores por clave igual.</p>
+                <pre class="mr-code">grupo(clave) = [v1, v2, …, vn]</pre>
+                <div id="mrGroupStats" class="mr-stats"></div>
+                <div id="mrGroupSample" class="mini-table"></div>
+                <div id="mrGroupTable" class="mini-table"></div>
+              </div>
+              <div class="mr-phase mr-reduce">
+                <h4><span class="mr-step">3</span>REDUCE</h4>
+                <p class="mr-desc">Agrega cada grupo en un único resultado.</p>
+                <pre id="mrReduceCode" class="mr-code"></pre>
+                <div id="mrReduceStats" class="mr-stats"></div>
+                <div id="mrReduceTable" class="mini-table"></div>
+              </div>
+              <div class="mr-phase mr-result">
+                <h4><span class="mr-step">4</span>RESULTADO</h4>
+                <p class="mr-desc">Salida ordenada lista para decidir.</p>
+                <div id="mrSummary" class="mr-stats"></div>
+                <div id="mrInsight" class="insight-mini"></div>
+              </div>
+            </div>
+            <div class="mr-output-grid">
+              <div class="mr-chart-box"><h4>📊 Gráfico del resultado</h4><div class="chart-box"><canvas id="mrChart"></canvas><div id="mrChartFallback" hidden></div></div></div>
+              <div class="mr-table-box"><h4>📋 Tabla del resultado</h4><div id="mrResultTable" class="mini-table mr-result-table"></div></div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="sparkflink" class="section">
+        <article class="card sf-card">
+          <div class="report-head">
+            <h3>⚡ Spark y Flink — La misma tarea, otros motores</h3>
+            <span class="cuadro-badge">Investigación · Sin instalación requerida</span>
+          </div>
+          <p class="mr-lede">Tomemos la misma situación del MapReduce (<b>total de ventas por producto</b> sobre <b>ventas.csv</b>): así se procesaría con cada motor. No se implementa un clúster real; la pestaña MapReduce de esta app ya simula el pipeline Hadoop en el navegador.</p>
+
+          <div class="sf-sim-grid">
+            <div class="sf-sim sf-spark-sim">
+              <h4>🧪 Simulador Spark — ejecuta el job con tus datos</h4>
+              <p class="mr-desc">Elige operación y datos, pulsa ejecutar y verás el <b>DAG por etapas</b>, el código PySpark equivalente generado para tu selección y el resultado real calculado en tu navegador.</p>
+              <div class="mr-config sf-sim-config">
+                <label>⚙️ Operación
+                  <select id="spkOperation">
+                    <option value="ventas_producto">💰 Total de ventas (S/) por producto</option>
+                    <option value="unidades_categoria">📦 Total de unidades por categoría</option>
+                    <option value="ventas_ciudad">📍 Total de ventas (S/) por ciudad / sede</option>
+                    <option value="tickets_mes">🗓️ N° de transacciones por mes</option>
+                    <option value="ticket_prom_categoria">🧾 Ticket promedio (S/) por categoría</option>
+                    <option value="precio_prom_producto">🏷️ Precio unitario promedio (S/) por producto</option>
+                    <option value="ventas_mes">📅 Total de ventas (S/) por mes</option>
+                    <option value="unidades_producto">📦 Total de unidades por producto</option>
+                    <option value="ventas_categoria">🗂️ Total de ventas (S/) por categoría</option>
+                    <option value="transacciones_ciudad">🔢 N° de transacciones por ciudad / sede</option>
+                    <option value="ticket_prom_ciudad">🧾 Ticket promedio (S/) por ciudad / sede</option>
+                    <option value="venta_max_producto">🏆 Venta máxima (S/) por producto</option>
+                  </select>
+                </label>
+                <label>🗂️ Datos
+                  <select id="spkDataset">
+                    <option value="filtrados">Filtros actuales del panel</option>
+                    <option value="todos">Todos los registros</option>
+                  </select>
+                </label>
+                <label>🔝 Top N
+                  <select id="spkTopN">
+                    <option value="5">Top 5</option>
+                    <option value="10" selected>Top 10</option>
+                    <option value="15">Top 15</option>
+                    <option value="50">Todos</option>
+                  </select>
+                </label>
+                <button id="spkRunBtn" type="button" class="primary-btn">▶ Ejecutar job Spark</button>
+              </div>
+              <div id="spkError" class="mr-error" hidden></div>
+              <div id="spkEmpty"><p class="empty">Selecciona operación y datos, luego “Ejecutar job Spark”. Cambia los filtros del panel para probar con otros recortes.</p></div>
+              <div id="spkResults" hidden>
+                <div id="spkStages" class="dag"></div>
+                <pre id="spkCode" class="mr-code"></pre>
+                <div class="mr-output-grid">
+                  <div class="mr-chart-box"><h4>📊 Gráfico Spark</h4><div class="chart-box"><canvas id="spkChart"></canvas><div id="spkChartFallback" hidden></div></div></div>
+                  <div class="mr-table-box"><h4>📋 Tabla Spark</h4><div id="spkTable" class="mini-table mr-result-table"></div></div>
+                </div>
+                <p id="spkNote" class="rep-note"></p>
+              </div>
+            </div>
+
+            <div class="sf-sim sf-flink-sim">
+              <h4>🧪 Simulador Flink — streaming de ventas en vivo <span id="flkLiveDot" class="flk-dot" hidden></span></h4>
+              <p class="mr-desc">Inicia el flujo y cada venta entra como <b>evento</b>: el total por clave se actualiza en vivo con estado y checkpoints, como Flink real. Puedes cambiar la clave, la velocidad y la ventana.</p>
+              <div class="mr-config sf-sim-config">
+                <label>🔑 Clave (GROUP BY)
+                  <select id="flkOperation">
+                    <option value="ventas_producto">💰 Ventas por producto</option>
+                    <option value="ventas_ciudad">📍 Ventas por ciudad / sede</option>
+                    <option value="unidades_categoria">📦 Unidades por categoría</option>
+                    <option value="ventas_categoria">🗂️ Ventas por categoría</option>
+                    <option value="transacciones_ciudad">🔢 Transacciones por ciudad</option>
+                    <option value="tickets_mes">🗓️ Transacciones por mes</option>
+                    <option value="unidades_producto">📦 Unidades por producto</option>
+                    <option value="ventas_mes">📅 Ventas por mes</option>
+                  </select>
+                </label>
+                <label>🗂️ Datos
+                  <select id="flkDataset">
+                    <option value="filtrados">Filtros actuales del panel</option>
+                    <option value="todos">Todos los registros</option>
+                  </select>
+                </label>
+                <label>⚡ Velocidad <span class="speed-val"><b id="flkSpeedVal">100</b> ev/s</span>
+                  <input id="flkSpeed" type="range" min="1" max="1000" step="1" value="100" title="Mueve el slider: 1 (lento, pedagógico) a 1000 (rápido). Se aplica en vivo sin reiniciar el stream.">
+                </label>
+                <label>🪟 Ventana
+                  <select id="flkWindow">
+                    <option value="global">Acumulada (todo el flujo)</option>
+                    <option value="w200">Últimos 200 eventos</option>
+                  </select>
+                </label>
+                <button id="flkStartBtn" type="button" class="primary-btn">▶ Iniciar stream</button>
+                <button id="flkStopBtn" type="button" class="ghost-btn">⏹ Detener</button>
+              </div>
+              <div id="flkError" class="mr-error" hidden></div>
+              <pre id="flkCode" class="mr-code"></pre>
+              <div id="flkStats" class="mr-stats"></div>
+              <div class="mr-output-grid">
+                <div class="mr-chart-box"><h4>📊 Totales en vivo</h4><div class="chart-box"><canvas id="flkChart"></canvas><div id="flkChartFallback" hidden></div></div></div>
+                <div class="mr-table-box"><h4>📋 Top en vivo</h4><div id="flkTable" class="mini-table mr-result-table"><p class="empty" style="padding:12px">Pulsa “Iniciar stream”.</p></div></div>
+              </div>
+              <p class="rep-note">Simulación fiel del modelo Flink: eventos uno a uno, estado por clave, ventana y checkpoints periódicos (exactly-once). El SQL mostrado es el que usarías en un clúster Flink real.</p>
+            </div>
+          </div>
+
+          <div class="sf-grid">
+            <div class="sf-box sf-hadoop">
+              <h4><i></i>🐘 Hadoop MapReduce (batch en disco)</h4>
+              <p>Cada bloque de <code>ventas.csv</code> en HDFS lo lee un <b>Mapper</b> que emite <code>(producto, venta)</code>; el <b>Shuffle</b> agrupa por producto y cada <b>Reducer</b> suma su grupo. Escribe resultados intermedios a disco: seguro y escalable, pero lento para iterar.</p>
+              <pre class="mr-code">// Mapper (pseudocódigo)
+map(linea):
+  fila = parsear(linea)          // ventas.csv
+  emitir(fila.producto, fila.venta)
+// Reducer
+reduce(producto, ventas):
+  emitir(producto, suma(ventas))</pre>
+              <p class="sf-where">📍 En el diagrama: es el motor <b>batch clásico</b> dentro de “Procesamiento” (ruta HDFS).</p>
+            </div>
+            <div class="sf-box sf-spark">
+              <h4><i></i>🔥 Apache Spark (batch en memoria)</h4>
+              <p>Lee el CSV una vez a memoria (RDD/DataFrame), aplica transformaciones que forman un <b>DAG</b> y ejecuta una <b>acción</b>. Al evitar disco entre pasos, es ~10–100× más rápido que MapReduce en tareas iterativas e interactivas como este dashboard.</p>
+              <pre class="mr-code"># PySpark — misma operación
+df = spark.read.csv("ventas.csv", header=True)
+(df.groupBy("producto")
+   .agg(sum("venta").alias("total"))
+   .orderBy("total", ascending=False)
+   .show())</pre>
+              <p class="sf-where">📍 En el diagrama: alternativa <b>rápida en memoria</b> para el mismo “Procesamiento” batch.</p>
+            </div>
+            <div class="sf-box sf-flink">
+              <h4><i></i>🌊 Apache Flink (streaming en tiempo real)</h4>
+              <p>Trata cada venta como un <b>evento</b> de un flujo continuo (ej.: las ventas “en vivo” del panel). Mantiene el total por producto en <b>estado</b> y lo actualiza con cada evento, con exactly-once y ventanas de tiempo.</p>
+              <pre class="mr-code">-- Flink SQL — misma operación en vivo
+SELECT producto, SUM(venta) AS total
+FROM ventas_stream
+GROUP BY producto;</pre>
+              <p class="sf-where">📍 En el diagrama: motor del flujo <b>en vivo</b> (equivale al “Tiempo real: ON” del panel).</p>
+            </div>
+          </div>
+
+          <div class="sf-box sf-compare">
+            <h4><i></i>⚖️ Diferencias clave: Hadoop/MapReduce vs Spark vs Flink</h4>
+            <div class="table-wrap"><table class="data-table">
+              <thead><tr><th>Aspecto</th><th>🐘 Hadoop MapReduce</th><th>🔥 Spark</th><th>🌊 Flink</th></tr></thead>
+              <tbody>
+                <tr><td><b>Modelo</b></td><td>Batch en 2 fases (Map → Reduce)</td><td>Batch + DAG en memoria</td><td>Streaming primero (batch como caso especial)</td></tr>
+                <tr><td><b>Velocidad</b></td><td>Lento: escribe a disco entre fases</td><td>Rápido: datos en RAM, reintentos por linaje</td><td>Muy rápido en eventos: estado + checkpoints</td></tr>
+                <tr><td><b>Latencia típica</b></td><td>Minutos–horas</td><td>Segundos–minutos (micro-batch o batch)</td><td>Milisegundos–segundos (evento a evento)</td></tr>
+                <tr><td><b>Ideal para</b></td><td>ETL masivo nocturno, conteos históricos</td><td>Analítica interactiva, ML, este dashboard a escala</td><td>Alertas, fraude, totales “en vivo” por producto</td></tr>
+                <tr><td><b>Tolerancia a fallos</b></td><td>Re-ejecuta tareas (HDFS replica ×3)</td><td>Recomputa particiones por linaje</td><td>Checkpoints + exactly-once</td></tr>
+                <tr><td><b>En este proyecto</b></td><td>Simulado en MapReduce + HDFS real (namenode:9870)</td><td>Equivalente veloz del mismo groupBy</td><td>Equivalente del modo “Tiempo real: ON”</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+
+          <div class="sf-box sf-usage">
+            <h4><i></i>🧩 Uso de Spark y Flink en ESTE proyecto</h4>
+            <div class="table-wrap"><table class="data-table">
+              <thead><tr><th>Motor</th><th>Qué hace en esta app</th><th>Cuándo usarlo aquí</th></tr></thead>
+              <tbody>
+                <tr><td><b>🐘 Hadoop MapReduce</b></td><td>Pestaña <b>MapReduce</b>: ejecuta MAP → Shuffle → REDUCE sobre tus filas (simulado en navegador) + HDFS real en Docker (<code>namenode:9870</code>) y MongoDB para persistencia.</td><td>Para entender el modelo batch clásico y validar agregaciones históricas paso a paso.</td></tr>
+                <tr><td><b>🔥 Spark</b></td><td><b>Simulador Spark</b>: corre la misma agregación como job por etapas (DAG: lectura → map+combine → shuffle → reduce) en memoria y genera el código PySpark listo para clúster.</td><td>Para probar agregaciones interactivas en segundos y comparar tiempos contra MapReduce.</td></tr>
+                <tr><td><b>🌊 Flink</b></td><td><b>Simulador Flink</b>: convierte tus filas en un flujo de eventos en vivo con estado por clave, ventanas y checkpoints; equivale al “Tiempo real: ON” del panel.</td><td>Para monitorear totales que se actualizan venta a venta y detectar picos al instante.</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+
+          <div class="sf-box sf-diagram">
+            <h4><i></i>🗺️ Diagrama del proceso: ventas.csv → Procesamiento → Resultado → Análisis</h4>
+            <div class="route-btns" role="group" aria-label="Resaltar ruta por motor">
+              <button type="button" class="route-btn active" data-route="all">Todas las rutas</button>
+              <button type="button" class="route-btn" data-route="hadoop">🐘 Ruta Hadoop</button>
+              <button type="button" class="route-btn" data-route="spark">🔥 Ruta Spark</button>
+              <button type="button" class="route-btn" data-route="flink">🌊 Ruta Flink</button>
+            </div>
+            <div class="pipe" id="pipeDiagram" data-active="all">
+              <div class="pipe-stage pipe-src"><b>📄 1 · ventas.csv</b><span>≈20k filas: fecha, producto, categoría, cantidad, precio, ciudad</span><span class="pipe-via">Vías: upload web · HDFS · MongoDB</span></div>
+              <span class="pipe-arrow">→</span>
+              <div class="pipe-stage pipe-proc"><b>⚙️ 2 · Procesamiento</b>
+                <div class="pipe-engines">
+                  <span class="eng eng-hadoop" data-eng="hadoop">🐘 Hadoop MapReduce<em>HDFS → Map → Shuffle → Reduce (disco)</em></span>
+                  <span class="eng eng-spark" data-eng="spark">🔥 Spark<em>DataFrame → DAG en memoria → acción</em></span>
+                  <span class="eng eng-flink" data-eng="flink">🌊 Flink<em>eventos → estado + ventanas → continuo</em></span>
+                </div>
+                <span class="pipe-note">Los 3 motores ejecutan lo mismo: agrupar por clave y agregar</span>
+              </div>
+              <span class="pipe-arrow">→</span>
+              <div class="pipe-stage pipe-res"><b>📊 3 · Resultado</b><span>total por producto / ciudad / mes</span><span class="pipe-via">Tablas · gráficos · CSV</span></div>
+              <span class="pipe-arrow">→</span>
+              <div class="pipe-stage pipe-ana"><b>🧠 4 · Análisis</b><span>insights, ranking, proyección y decisiones</span><span class="pipe-via">Panel · Reportes PDF/HTML</span></div>
+            </div>
+            <div class="pipe-flows">
+              <div class="pipe-flow" data-eng="hadoop"><b>🐘 Ruta Hadoop:</b> ventas.csv → HDFS (réplica ×3) → <b>Map</b> <code>(producto, venta)</code> → <b>Shuffle</b> por producto → <b>Reduce</b> suma → Resultado → Análisis. <em>Interviene en el procesamiento batch histórico</em> (pestaña MapReduce).</div>
+              <div class="pipe-flow" data-eng="spark"><b>🔥 Ruta Spark:</b> ventas.csv → DataFrame en <b>memoria</b> → <b>DAG</b> (groupBy + sum) → Resultado → Análisis. <em>Interviene en el mismo procesamiento batch pero interactivo</em> (simulador Spark).</div>
+              <div class="pipe-flow" data-eng="flink"><b>🌊 Ruta Flink:</b> cada venta como <b>evento en vivo</b> → estado por clave + ventanas + checkpoints → total siempre actualizado → Resultado → Análisis. <em>Interviene en el procesamiento continuo</em> (simulador Flink / tiempo real).</div>
+            </div>
+          </div>
         </article>
       </section>
 
